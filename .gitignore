@@ -1,0 +1,10 @@
+__pycache__/
+*.py[cod]
+data/
+testing_logs/
+training_logs/
+reclassifier_data/
+cache/
+
+# These files are present locally but exceed common Git remote limits.
+checkpoints/*.pth

@@ -1,0 +1,153 @@
+solver:
+  model_arch: da2_joint_geometry_pose
+  freeze_world_enhancer: false
+  rd_seed: 1
+  per_val: 10
+  per_write: 50
+
+checkpoint: checkpoints/epoch_30.pth
+
+checkpoint_loading:
+  mode: standard
+  exclude_prefixes: []
+
+diffusion:
+  train_steps: 1000
+  inference_steps: 20
+  inference_start_timestep: 500
+  beta_schedule: squaredcos_cap_v2
+  concat_injection: false
+  pose_dim: 384
+  monodiff_hidden_dim: 512
+  monodiff_num_heads: 8
+  monodiff_dropout: 0.0
+  category_embedding_dim: 32
+  timestep_dim: 128
+  clip_sample: false
+  clip_sample_range: 3.0
+  inference_init: random
+  coarse_timestep: 300
+  direct_size_blend: 0.25
+
+deep_sdf:
+  shapenet_dim: 256
+
+resnet:
+  resnet_dim: 1024
+  backbone: convnext_tiny
+  weights: default
+  separate_depth_stem: true
+  depth_feature_dim: 128
+
+da2:
+  model_name: depth-anything/Depth-Anything-V2-Small-hf
+  input_size: 224
+  patch_size: 14
+  token_dim: 256
+  token_grid: 8
+  num_scales: 4
+  num_heads: 8
+  context_layers: 2
+  dropout: 0.1
+  freeze_backbone: true
+  local_files_only: false
+
+metric_center_z:
+  depth_source: dinov2_base
+  model_name: depth-anything/Depth-Anything-V2-Metric-Indoor-Small-hf
+  revision: 8078d68a9c75a972131914f6afd0c1723be0da7f
+  input_size: 518
+  local_files_only: false
+  enabled_classes: [0, 1]
+  valid_depth_min_m: 0.05
+  valid_depth_max_m: 5.0
+  min_valid_pixels: 64
+  category_dim: 16
+  hidden_dim: 128
+  dropout: 0.1
+  max_log_residual: 0.5
+  fail_fast_invalid_batches: 3
+  fail_fast_zero_grad_batches: 3
+  trainable_scope: head_only
+  detach_base_translation: true
+
+octree:
+  name: autoencoder
+  feature: DNF
+  channel: 7
+  channel_out: 7
+  octree_dim: 256
+  num_class: 6
+  resblk_num: 2
+  depth: 6
+  full_depth: 2
+  shape_depth: 5
+  shape_dim: 0
+  pyramid_depth: 3
+  pyramid_dims: [512, 256, 128]
+
+e2e_pose:
+  num_classes: 6
+  intrinsics: [591.0125, 590.16775, 322.525, 244.11084]
+  decoder_layers: 4
+  num_heads: 8
+  dropout: 0.1
+  depth_hidden_dim: 256
+  depth_min_m: 0.1
+  depth_max_m: 3.0
+  depth_init_m: 0.7
+  size_min_m: 0.0001
+  size_init_m: 0.2
+  max_uv_offset_ratio: 0.25
+  max_log_z_residual: 0.7
+  decouple_translation_size: true
+  detach_pose_query_for_ts: true
+  branch_adapter_dropout: 0.1
+
+joint_geometry:
+  trainable_scope: joint_heads
+  hidden_dim: 256
+  category_dim: 16
+  dropout: 0.1
+  point_count: 1024
+  min_correspondence_points: 64
+  hypothesis_class_ids: [0, 3]
+  detector_prior_logit: 4.0
+  max_translation_ratio: 0.5
+  max_log_size_residual: 0.35
+  initial_gate_logit: -8.0
+  quality_score_weight: 0.0
+  geometry_residual_score_weight: 0.0
+  score_mode: preserve
+  fail_fast_zero_grad_batches: 20
+  fail_fast_nonfinite_grad_batches: 3
+  rotation_gate_scale: 0.0
+  rotation_source: detector
+
+test:
+  img_size: 192
+  sample_num: 1024
+  split_file: test_list_all.txt
+  num_workers: 0
+  rotation_output_mode: diffusion
+  size_output_mode: blend
+  scale_mode: norm
+  depth_mode: rgb_only
+  projection_mode: full_image
+  depth_feature:
+    encoding: log1p
+    min_m: 0.05
+    max_m: 5.0
+  metric_depth:
+    source: dinov2_base
+    required: true
+    png_scale: 1000.0
+  segmentation_results_dir: data/segmentation_results/REAL275_groundingdino_sam_full_bottle_to_can
+  eval_protocol: monodiff9d_paper
+  test_log_dir: testing_logs
+
+train_dataset:
+  data_dir: data
+
+train_dataloader:
+  pin_memory: true
